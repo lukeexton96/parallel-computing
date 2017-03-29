@@ -37,6 +37,8 @@ void print_help() {
 void readData() {
 	// Read data in from Text File
 	std::ifstream file("temp_lincolnshire_short.txt");
+	//std::ifstream file("temp_lincolnshire.txt");
+
 	int counter = 0;
 
 	// initialise clock for read time
@@ -66,7 +68,7 @@ void readData() {
 			counter++;
 			break;
 		case 5:
-			airTemp.push_back(stoi(temp));
+			airTemp.push_back(stoi(temp) * 10);
 			counter = 0;
 			break;
 		}
@@ -133,7 +135,7 @@ void getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program program
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	std::cout << "Minimum Value = " << B[0] << std::endl;
+	std::cout << "Minimum Value = " << (float)B[0] / (float)10 << std::endl;
 }
 
 // Method used to calculate Maximum of values
@@ -191,7 +193,7 @@ void getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program program
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	std::cout << "Maximum Value = " << B[0] << std::endl;
+	std::cout << "Maximum Value = " << (float)B[0] / (float)10 << std::endl;
 }
 
 // Method used to calculate Sum and Average of values
@@ -249,11 +251,71 @@ void getAverage(cl::Context context, cl::CommandQueue queue, cl::Program program
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	std::cout << "A = " << A << std::endl;
-	std::cout << "Sum = " << B[0] << std::endl;
-	std::cout << "Average = " << float(B[0]) / A.size() << std::endl;
+	// Print temperature array
+	//std::cout << "A = " << A << std::endl;
+
+	// Print outputs
+	std::cout << "Sum = " << float(B[0]) / (float)10 << std::endl;
+	std::cout << "Average = " << float(B[0]) / A.size() / (float)10 << std::endl;
 }
 
+// Method used to calculate Standard Deviation of values
+void getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Program program) {
+	typedef int mytype;
+
+	//Part 4 - memory allocation
+	//host - input
+	//std::vector<mytype> A(10, 1);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
+	vector<int> A = airTemp;
+
+	//the following part adjusts the length of the input vector so it can be run for a specific workgroup size
+	//if the total input length is divisible by the workgroup size
+	//this makes the code more efficient
+	size_t local_size = 256;
+
+	size_t padding_size = A.size() % local_size;
+
+	//if the input vector is not a multiple of the local_size
+	//insert additional neutral elements (0 for addition) so that the total will not be affected
+	if (padding_size) {
+		//create an extra vector with neutral values
+		std::vector<int> A_ext(local_size - padding_size, 0);
+		//append that extra vector to our input
+		A.insert(A.end(), A_ext.begin(), A_ext.end());
+	}
+
+	size_t input_elements = A.size();//number of input elements
+	size_t input_size = A.size() * sizeof(mytype);//size in bytes
+	size_t nr_groups = input_elements / local_size;
+
+	//host - output
+	std::vector<mytype> B(input_elements);
+	size_t output_size = B.size() * sizeof(mytype);//size in bytes
+
+												   //device - buffers
+	cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
+	cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, output_size);
+
+	//Part 5 - device operations
+
+	//5.1 copy array A to and initialise other arrays on device memory
+	queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, input_size, &A[0]);
+	queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
+
+	//5.2 Setup and execute all kernels (i.e. device code)
+	cl::Kernel kernel_1 = cl::Kernel(program, "standardDeviation");
+	kernel_1.setArg(0, buffer_A);
+	kernel_1.setArg(1, buffer_B);
+	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
+
+																//call all kernels in a sequence
+	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
+
+	//5.3 Copy the result from device to host
+	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
+
+	std::cout << "Standard Deviation = " << (float)B[0] / (float)10 << std::endl;
+}
 
 int main(int argc, char **argv) {
 	//Part 1 - handle command line options such as device selection, verbosity, etc.
@@ -305,6 +367,7 @@ int main(int argc, char **argv) {
 		getAverage(context, queue, program);
 		getMinimum(context, queue, program);
 		getMaximum(context, queue, program);
+		getStandardDeviation(context, queue, program);
 
 	}
 	catch (cl::Error err) {
