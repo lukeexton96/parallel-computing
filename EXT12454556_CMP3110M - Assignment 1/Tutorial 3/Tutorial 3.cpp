@@ -76,12 +76,15 @@ void readData() {
 
 	file.close();
 	clock_t finish = clock();
+	std::cout << "\n*********************" << std::endl;
 	cout << "File read" << endl;
 	cout << "Total file read time: " << double(finish - start) / CLOCKS_PER_SEC << endl;
+	std::cout << "*********************" << std::endl;
+
 }
 
 // Method used to calculate Minimum of values
-void getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program program) {
+float getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program program) {
 	typedef int mytype;
 
 	//Part 4 - memory allocation
@@ -135,11 +138,13 @@ void getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program program
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	std::cout << "Minimum Value = " << (float)B[0] / (float)10 << std::endl;
+	return ((float)B[0] / 10);
+
+	//std::cout << "Minimum Value = " << (float)B[0] / (float)10 << std::endl;
 }
 
 // Method used to calculate Maximum of values
-void getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program program) {
+float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program program) {
 	typedef int mytype;
 
 	//Part 4 - memory allocation
@@ -193,11 +198,13 @@ void getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program program
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	std::cout << "Maximum Value = " << (float)B[0] / (float)10 << std::endl;
+	return ((float)B[0] / 10);
+
+	//std::cout << "Maximum Value = " << (float)B[0] / (float)10 << std::endl;
 }
 
 // Method used to calculate Sum and Average of values
-void getAverage(cl::Context context, cl::CommandQueue queue, cl::Program program) {
+float getAverage(cl::Context context, cl::CommandQueue queue, cl::Program program) {
 	typedef int mytype;
 
 	//Part 4 - memory allocation
@@ -251,16 +258,14 @@ void getAverage(cl::Context context, cl::CommandQueue queue, cl::Program program
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	// Print temperature array
-	//std::cout << "A = " << A << std::endl;
-
 	// Print outputs
-	std::cout << "Sum = " << float(B[0]) / (float)10 << std::endl;
-	std::cout << "Average = " << float(B[0]) / A.size() / (float)10 << std::endl;
+	return ((float)B[0] / 10);
+	//std::cout << "Sum = " << float(B[0]) / (float)10 << std::endl;
+	//std::cout << "Average = " << float(B[0]) / A.size() / (float)10 << std::endl;
 }
 
 // Method used to calculate Standard Deviation of values
-void getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Program program) {
+float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Program program, float mean) {
 	typedef int mytype;
 
 	//Part 4 - memory allocation
@@ -307,14 +312,16 @@ void getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Progr
 	kernel_1.setArg(0, buffer_A);
 	kernel_1.setArg(1, buffer_B);
 	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
+	kernel_1.setArg(3, mean);
 
-																//call all kernels in a sequence
+	//call all kernels in a sequence
 	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
 
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	std::cout << "Standard Deviation = " << (float)B[0] / (float)10 << std::endl;
+	return (float)B[0] / 10;
+	//std::cout << "Standard Deviation = " << (float)B[0] / (float)10 << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -364,11 +371,33 @@ int main(int argc, char **argv) {
 		// Read data in from file
 		readData();
 
-		getAverage(context, queue, program);
-		getMinimum(context, queue, program);
-		getMaximum(context, queue, program);
-		getStandardDeviation(context, queue, program);
+		std::cout << "\n*********************" << std::endl;
+		float sum = getAverage(context, queue, program);
+		std::cout << "Total Sum = " << sum << std::endl;
+		std::cout << "*********************" << std::endl;
 
+		std::cout << "\n*********************" << std::endl;
+		float average = sum / airTemp.size();
+		std::cout << "Mean (Average) = " << average << std::endl;
+		std::cout << "*********************" << std::endl;
+		
+		std::cout << "\n*********************" << std::endl;
+		float minmum = getMinimum(context, queue, program);
+		std::cout << "Minimum = " << minmum << std::endl;
+		std::cout << "*********************" << std::endl;
+
+		std::cout << "\n*********************" << std::endl;
+		float maximum = getMaximum(context, queue, program);
+		std::cout << "Maximum = " << maximum << std::endl;
+		std::cout << "*********************" << std::endl;
+
+		// Function returns partial Sum Squared Difference
+		// Returns sum after initial operations, up to point of items in array whereby they are summed
+		// Need to: 1) Divide result by original mean, 2) Square Root of the resultant
+		std::cout << "\n*********************" << std::endl;
+		float sdSum = getStandardDeviation(context, queue, program, average);
+		std::cout << "Standard Deviation = " << sqrt((sdSum / average)) << std::endl;
+		std::cout << "*********************" << std::endl;
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
