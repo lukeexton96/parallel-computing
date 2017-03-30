@@ -36,8 +36,12 @@ void print_help() {
 // Method used to calculate data
 void readData() {
 	// Read data in from Text File
+	cout << "Reading..." << endl;
+
 	std::ifstream file("temp_lincolnshire_short.txt");
 	//std::ifstream file("temp_lincolnshire.txt");
+
+	//printf("%.2f", var);
 
 	int counter = 0;
 
@@ -85,7 +89,9 @@ void readData() {
 
 // Method used to calculate Minimum of values
 float getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program program) {
+	
 	typedef int mytype;
+	cl::Event prof_event;
 
 	//Part 4 - memory allocation
 	//host - input
@@ -133,11 +139,12 @@ float getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
 
 																//call all kernels in a sequence
-	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
+	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size), NULL, &prof_event);
 
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
+	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
 	return ((float)B[0] / 10);
 
 	//std::cout << "Minimum Value = " << (float)B[0] / (float)10 << std::endl;
@@ -145,7 +152,9 @@ float getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 
 // Method used to calculate Maximum of values
 float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program program) {
+	
 	typedef int mytype;
+	cl::Event prof_event;
 
 	//Part 4 - memory allocation
 	//host - input
@@ -192,12 +201,14 @@ float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	kernel_1.setArg(1, buffer_B);
 	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
 
-																//call all kernels in a sequence
-	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
+	//call all kernels in a sequence
+	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size), NULL, &prof_event);
 
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
+
+	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
 	return ((float)B[0] / 10);
 
 	//std::cout << "Maximum Value = " << (float)B[0] / (float)10 << std::endl;
@@ -206,6 +217,7 @@ float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 // Method used to calculate Sum and Average of values
 float getAverage(cl::Context context, cl::CommandQueue queue, cl::Program program) {
 	typedef int mytype;
+	cl::Event prof_event;
 
 	//Part 4 - memory allocation
 	//host - input
@@ -253,10 +265,12 @@ float getAverage(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
 
 																//call all kernels in a sequence
-	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
+	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size), NULL, &prof_event);
 
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
+
+	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
 
 	// Print outputs
 	return ((float)B[0] / 10);
@@ -267,6 +281,7 @@ float getAverage(cl::Context context, cl::CommandQueue queue, cl::Program progra
 // Method used to calculate Standard Deviation of values
 float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Program program, float mean) {
 	typedef int mytype;
+	cl::Event prof_event;
 
 	//Part 4 - memory allocation
 	//host - input
@@ -315,12 +330,15 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 	kernel_1.setArg(3, mean);
 
 	//call all kernels in a sequence
-	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
+	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size), NULL, &prof_event);
 
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	return (float)B[0] / 100;
+	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
+	return (float)B[0] ;
+
+	// / 100
 	//std::cout << "Standard Deviation = " << (float)B[0] / (float)10 << std::endl;
 }
 
@@ -348,7 +366,7 @@ int main(int argc, char **argv) {
 		std::cout << "Runinng on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
 
 		//create a queue to which we will push commands for the device
-		cl::CommandQueue queue(context);
+		cl::CommandQueue queue(context, CL_QUEUE_PROFILING_ENABLE);
 
 		//2.2 Load & build the device code
 		cl::Program::Sources sources;
@@ -395,7 +413,7 @@ int main(int argc, char **argv) {
 		// Returns sum after initial operations, up to point of items in array whereby they are summed
 		// Need to: 1) Divide result by original mean, 2) Square Root of the resultant
 		std::cout << "\n*********************" << std::endl;
-		float sdSum = getStandardDeviation(context, queue, program, average);
+		float sdSum = getStandardDeviation(context, queue, program, average * 10);
 		std::cout << "Standard Deviation = " << (sqrt(sdSum/airTemp.size())) << std::endl;
 		std::cout << "*********************" << std::endl;
 	}
