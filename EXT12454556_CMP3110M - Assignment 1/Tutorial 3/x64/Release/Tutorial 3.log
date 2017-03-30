@@ -1,6 +1,6 @@
 ﻿  Tutorial 3.cpp
-Tutorial 3.cpp(77): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-Tutorial 3.cpp(90): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+Tutorial 3.cpp(86): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+Tutorial 3.cpp(104): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
   Generating code
   5 of 842 functions ( 0.6%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation

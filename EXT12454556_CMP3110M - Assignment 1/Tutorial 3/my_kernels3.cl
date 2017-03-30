@@ -10,6 +10,7 @@ __kernel void reduce_add_4(__global const int* A, __global int* B, __local int* 
 
 	barrier(CLK_LOCAL_MEM_FENCE);//wait for all local threads to finish copying from global to local memory
 
+	// Reduce
 	for (int i = 1; i < N; i *= 2) {
 		if (!(lid % (i * 2)) && ((lid + i) < N)) 
 			scratch[lid] += scratch[lid + i];
@@ -61,10 +62,13 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 	scratch[lid] = A[id];
 	barrier(CLK_LOCAL_MEM_FENCE);//wait for all local threads to finish copying from global to local memory
 
-	// Reduce
+	// Reduce 
+	// loop through input, operator translation: i = i * 2
 	for (int i = 1; i < N; i *= 2) {
 		if (!(lid % (i * 2)) && ((lid + i) < N))
+			// if current array item is less than next array item 
 			if(scratch[lid] < scratch[lid + i]) 
+				// set new item as new 'max'
 				scratch[lid] = scratch[lid + i];
 
 		barrier(CLK_LOCAL_MEM_FENCE);
@@ -74,6 +78,7 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 	//serial operation! but works for any group size
 	//copy the cache to output array
 	if (!lid) {
+		// append
 		atomic_max(&B[0],scratch[lid]);
 	}
  }

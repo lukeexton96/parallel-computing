@@ -102,7 +102,6 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 		barrier(CLK_LOCAL_MEM_FENCE);
 	}
 
-
 	//we add results from all local groups to the first element of the array
 	//serial operation! but works for any group size
 	//copy the cache to output array

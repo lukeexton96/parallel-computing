@@ -53,11 +53,18 @@ void readData() {
 	while (file >> temp) {
 		switch (counter)
 		{
+
+		// use vector::push_back, Adds a new element at the end of the vector, 
+		// after its current last element. 
+		// src: http://www.cplusplus.com/reference/vector/vector/push_back/
 		case 0: 
 			stationName.push_back(temp);
+			//increment counter
 			counter++;
 			break;
 		case 1:
+			// use 'stoi' to convert string to int
+			// src: http://www.cplusplus.com/reference/string/stoi/
 			yearRecorded.push_back(stoi(temp));
 			counter++;
 			break;
@@ -70,6 +77,8 @@ void readData() {
 			counter++;
 			break;
 		case 4:
+			// use 'stoi' to convert string to float
+			// src: http://www.cplusplus.com/reference/string/stof/
 			timeRecorded.push_back(stoi(temp));
 			counter++;
 			break;
@@ -111,6 +120,7 @@ float getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	//this makes the code more efficient
 	size_t local_size = 256;
 
+	// adjust padding size according to the length of the array modulus the local size
 	size_t padding_size = A.size() % local_size;
 
 	//if the input vector is not a multiple of the local_size
@@ -124,13 +134,13 @@ float getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 
 	size_t input_elements = A.size();//number of input elements
 	size_t input_size = A.size() * sizeof(mytype);//size in bytes
-	size_t nr_groups = input_elements / local_size;
+	size_t nr_groups = input_elements / local_size;//define number of groups
 
 	//host - output
 	std::vector<mytype> B(input_elements);
 	size_t output_size = B.size() * sizeof(mytype);//size in bytes
 
-												   //device - buffers
+	//device - buffers
 	cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
 	cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, output_size);
 
@@ -140,22 +150,23 @@ float getMinimum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, input_size, &A[0]);
 	queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
 
-														 //5.2 Setup and execute all kernels (i.e. device code)
+	//5.2 Setup and execute all kernels (i.e. device code)
 	cl::Kernel kernel_1 = cl::Kernel(program, "minimum");
 	kernel_1.setArg(0, buffer_A);
 	kernel_1.setArg(1, buffer_B);
 	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
 
-																//call all kernels in a sequence
+	//call all kernels in a sequence
 	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size), NULL, &prof_event);
 
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
+	// Output Kernal execution time 
 	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
+	
+	// return result of calculation
 	return ((float)B[0] / 10);
-
-	//std::cout << "Minimum Value = " << (float)B[0] / (float)10 << std::endl;
 }
 
 // Method used to calculate Maximum of values
@@ -174,6 +185,7 @@ float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	//this makes the code more efficient
 	size_t local_size = 256;
 
+	// adjust padding size according to the length of the array modulus the local size
 	size_t padding_size = A.size() % local_size;
 
 	//if the input vector is not a multiple of the local_size
@@ -187,13 +199,14 @@ float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 
 	size_t input_elements = A.size();//number of input elements
 	size_t input_size = A.size() * sizeof(mytype);//size in bytes
-	size_t nr_groups = input_elements / local_size;
+	size_t nr_groups = input_elements / local_size;//define number of groups
 
 	//host - output
-	std::vector<mytype> B(input_elements);
+	std::vector<mytype> B(input_elements);//initialse vector for output elements
 	size_t output_size = B.size() * sizeof(mytype);//size in bytes
 
-												   //device - buffers
+	//device - buffers
+	// explained: http://github.khronos.org/OpenCL-CLHPP/classcl_1_1_buffer.html
 	cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
 	cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, output_size);
 
@@ -203,7 +216,7 @@ float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, input_size, &A[0]);
 	queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
 
-														 //5.2 Setup and execute all kernels (i.e. device code)
+	//5.2 Setup and execute all kernels (i.e. device code)
 	cl::Kernel kernel_1 = cl::Kernel(program, "maximum");
 	kernel_1.setArg(0, buffer_A);
 	kernel_1.setArg(1, buffer_B);
@@ -215,11 +228,11 @@ float getMaximum(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-
+	// output Kernal execution time
 	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
+	
+	// return result of calculation
 	return ((float)B[0] / 10);
-
-	//std::cout << "Maximum Value = " << (float)B[0] / (float)10 << std::endl;
 }
 
 // Method used to calculate Sum and Average of values
@@ -237,6 +250,7 @@ float getAverage(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	//this makes the code more efficient
 	size_t local_size = 32;
 
+	// adjust padding size according to the length of the array modulus the local size
 	size_t padding_size = A.size() % local_size;
 
 	//if the input vector is not a multiple of the local_size
@@ -250,13 +264,14 @@ float getAverage(cl::Context context, cl::CommandQueue queue, cl::Program progra
 
 	size_t input_elements = A.size();//number of input elements
 	size_t input_size = A.size() * sizeof(mytype);//size in bytes
-	size_t nr_groups = input_elements / local_size;
+	size_t nr_groups = input_elements / local_size;//define number of groups
 
 	//host - output
-	std::vector<mytype> B(input_elements);
+	std::vector<mytype> B(input_elements);//initialse vector for output elements
 	size_t output_size = B.size() * sizeof(mytype);//size in bytes
 
-												   //device - buffers
+	//device - buffers
+	// explained: http://github.khronos.org/OpenCL-CLHPP/classcl_1_1_buffer.html
 	cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
 	cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, output_size);
 
@@ -266,28 +281,30 @@ float getAverage(cl::Context context, cl::CommandQueue queue, cl::Program progra
 	queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, input_size, &A[0]);
 	queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
 
-														 //5.2 Setup and execute all kernels (i.e. device code)
+	//5.2 Setup and execute all kernels (i.e. device code)
 	cl::Kernel kernel_1 = cl::Kernel(program, "reduce_add_4");
 	kernel_1.setArg(0, buffer_A);
 	kernel_1.setArg(1, buffer_B);
 	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
 
-																//call all kernels in a sequence
+	//call all kernels in a sequence
 	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size), NULL, &prof_event);
 
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
+	// Output Kernal execution time
 	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
 
-	// Print outputs
+	// Return result of calculation
 	return ((float)B[0] / 10);
-	//std::cout << "Sum = " << float(B[0]) / (float)10 << std::endl;
-	//std::cout << "Average = " << float(B[0]) / A.size() / (float)10 << std::endl;
+
 }
 
 // Method used to calculate Standard Deviation of values
 float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Program program, float mean) {
+	
+	// initialise event objects
 	typedef int mytype;
 	cl::Event prof_event;
 
@@ -302,6 +319,7 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 	//this makes the code more efficient
 	size_t local_size = 256;
 
+	// adjust padding size according to the length of the array modulus the local size
 	size_t padding_size = A.size() % local_size;
 
 	//if the input vector is not a multiple of the local_size
@@ -315,13 +333,14 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 
 	size_t input_elements = A.size();//number of input elements
 	size_t input_size = A.size() * sizeof(mytype);//size in bytes
-	size_t nr_groups = input_elements / local_size;
+	size_t nr_groups = input_elements / local_size;//define number of groups
 
 	//host - output
-	std::vector<mytype> B(input_elements);
+	std::vector<mytype> B(input_elements); //initialse vector for output elements
 	size_t output_size = B.size() * sizeof(mytype);//size in bytes
 
-												   //device - buffers
+	//device - buffers
+	// explained: http://github.khronos.org/OpenCL-CLHPP/classcl_1_1_buffer.html
 	cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
 	cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, output_size);
 
@@ -336,7 +355,7 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 	kernel_1.setArg(0, buffer_A);
 	kernel_1.setArg(1, buffer_B);
 	kernel_1.setArg(2, cl::Local(local_size * sizeof(mytype))); //local memory size
-	kernel_1.setArg(3, mean);
+	kernel_1.setArg(3, mean); // mean passed as argument
 
 	//call all kernels in a sequence
 	queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size), NULL, &prof_event);
@@ -344,9 +363,11 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
+	// Output Kernal execution time
 	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
+	
+	// Return result of calculation by pulling first element within array
 	return (float)B[0];
-
 }
 
 int main(int argc, char **argv) {
@@ -354,14 +375,13 @@ int main(int argc, char **argv) {
 	int platform_id = 0;
 	int device_id = 0;
 
+	//
 	for (int i = 1; i < argc; i++)	{
 		if ((strcmp(argv[i], "-p") == 0) && (i < (argc - 1))) { platform_id = atoi(argv[++i]); }
 		else if ((strcmp(argv[i], "-d") == 0) && (i < (argc - 1))) { device_id = atoi(argv[++i]); }
 		else if (strcmp(argv[i], "-l") == 0) { std::cout << ListPlatformsDevices() << std::endl; }
 		else if (strcmp(argv[i], "-h") == 0) { print_help(); }
 	}
-
-	// Read in the file
 
 	//detect any potential exceptions
 	try {
@@ -397,6 +417,9 @@ int main(int argc, char **argv) {
 		// Read data in from file
 		readData();
 
+		//Console outputs
+		// Use printf functionality output items to decimal places
+		// src: http://www.cplusplus.com/reference/cstdio/printf/
 		std::cout << "\n*********************" << std::endl;
 		float sum = getAverage(context, queue, program);
 		printf("Total Sum = %.4f", sum);
@@ -428,7 +451,5 @@ int main(int argc, char **argv) {
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
 	}
-
-	//system("pause");
 	return 0;
 }
