@@ -78,7 +78,7 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 	}
  }
 
- __kernel void standardDeviation(__global const int* A, __global int* B, __local int* scratch, int mean){
+ __kernel void standardDeviation(__global const int* A, __global int* B, __local int* scratch, float mean){
 	
 	// Initialise variables
 	int id = get_global_id(0);
@@ -88,7 +88,9 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 	// No need to loop as Open CL does it for you
 	// 1) Take the mean away from each item in array
 	// 2) Square each number after mean it reduced
-	scratch[lid] = ((A[id] - mean) * (A[id] - mean));
+	scratch[lid] = (float)(((A[id] - mean) * (A[id] - mean)) / 10);
+
+	//wait for all local threads to finish copying from global to local memory
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 
@@ -100,15 +102,12 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 		barrier(CLK_LOCAL_MEM_FENCE);
 	}
 
-
 	//we add results from all local groups to the first element of the array
 	//serial operation! but works for any group size
 	//copy the cache to output array
-	// 3) Add up result
-	// 4) Return total sum
+	// 3) Add up result, 4) Return total sum
 	if (!lid) {
 		atomic_add(&B[0],scratch[lid]);
-		//B[get_local_id(0)] = scratch[lid];
 	}
  }
 

@@ -24,6 +24,9 @@ vector<int> dayRecorded;
 vector<int> timeRecorded;
 vector<int> airTemp;
 
+// instantiate sizing for array, ready for SD later
+int initialSize;
+
 void print_help() {
 	std::cerr << "Application usage:" << std::endl;
 
@@ -36,11 +39,12 @@ void print_help() {
 // Method used to calculate data
 void readData() {
 	// Read data in from Text File
-	cout << "Reading..." << endl;
+	std::cout << "Reading..." << std::endl;
 
 	//std::ifstream file("temp_lincolnshire_short.txt");
 	std::ifstream file("temp_lincolnshire.txt");
 
+	// set counter to 0 to allow incrementation 
 	int counter = 0;
 
 	// initialise clock for read time
@@ -76,13 +80,19 @@ void readData() {
 		}
 	}
 
+	// close file 
 	file.close();
+	// stop timer
 	clock_t finish = clock();
+
+	// output info
 	std::cout << "\n*********************" << std::endl;
-	cout << "File read" << endl;
-	cout << "Total file read time: " << double(finish - start) / CLOCKS_PER_SEC << endl;
+	std::cout << "File read" << std::endl;
+	std::cout << "Total file read time: " << double(finish - start) / CLOCKS_PER_SEC << std::endl;
 	std::cout << "*********************" << std::endl;
 
+	// set initial size to air temperature array size, for SD division later
+	initialSize = airTemp.size();
 }
 
 // Method used to calculate Minimum of values
@@ -285,6 +295,7 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 	//host - input
 	//std::vector<mytype> A(10, 1);//allocate 10 elements with an initial value 1 - their sum is 10 so it should be easy to check the results!
 	vector<int> A = airTemp;
+	
 
 	//the following part adjusts the length of the input vector so it can be run for a specific workgroup size
 	//if the total input length is divisible by the workgroup size
@@ -334,10 +345,8 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
 	std::cout << "Kernel execution time [ns]: " << prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>() << std::endl;
-	return (float)B[0] ;
+	return (float)B[0];
 
-	// / 100
-	//std::cout << "Standard Deviation = " << (float)B[0] / (float)10 << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -359,6 +368,7 @@ int main(int argc, char **argv) {
 		//Part 2 - host operations
 		//2.1 Select computing devices
 		cl::Context context = GetContext(platform_id, device_id);
+		
 
 		//display the selected device
 		std::cout << "Runinng on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
@@ -411,8 +421,8 @@ int main(int argc, char **argv) {
 		// Returns sum after initial operations, up to point of items in array whereby they are summed
 		// Need to: 1) Divide result by original mean, 2) Square Root of the resultant
 		std::cout << "\n*********************" << std::endl;
-		float sdSum = getStandardDeviation(context, queue, program, average * 10);
-		std::cout << "Standard Deviation = " << (sqrt(sdSum/airTemp.size())) << std::endl;
+		float sdSum = getStandardDeviation(context, queue, program, average * 10);		
+		std::cout << "Standard Deviation = " << (sqrt((sdSum / initialSize) / 10)) << std::endl;
 		std::cout << "*********************" << std::endl;
 	}
 	catch (cl::Error err) {
