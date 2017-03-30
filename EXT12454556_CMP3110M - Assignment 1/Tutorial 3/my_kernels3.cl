@@ -25,16 +25,6 @@ __kernel void reduce_add_4(__global const int* A, __global int* B, __local int* 
 	}
 }
 
-//a very simple histogram implementation
-__kernel void hist_simple(__global const int* A, __global int* H) { 
-	int id = get_global_id(0);
-
-	//assumes that H has been initialised to 0
-	int bin_index = A[id];//take value as a bin index
-
-	atomic_inc(&H[bin_index]);//serial operation, not very efficient!
-}
-
 // Get the min
 __kernel void minimum(__global const int* A, __global int* B, __local int* scratch){
 	int id = get_global_id(0);
@@ -88,25 +78,27 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 	}
  }
 
- __kernel void standardDeviation(__global const int* A, __global int* B, __local int* scratch, float mean){
+ __kernel void standardDeviation(__global const int* A, __global int* B, __local int* scratch, int mean){
 	
 	// Initialise variables
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
 	int N = get_local_size(0);
 
-	//cache all N values from global memory to local memory
-	scratch[lid] = A[id];
-	//wait for all local threads to finish copying from global to local memory
-	barrier(CLK_LOCAL_MEM_FENCE);
-
 	// No need to loop as Open CL does it for you
 	// 1) Take the mean away from each item in array
 	// 2) Square each number after mean it reduced
-	scratch[lid] = ((scratch[lid] - mean) * (scratch[lid] - mean));
-
-	//wait for all local threads to finish copying from global to local memory
+	scratch[lid] = ((A[id] - mean) * (A[id] - mean));
 	barrier(CLK_LOCAL_MEM_FENCE);
+
+
+	 for (int i = 1; i < N; i *= 2) {
+		if (!(lid % (i * 2)) && ((lid + i) < N)) 
+			scratch[lid] += scratch[lid + i];
+		
+		//wait for all local threads to finish copying from global to local memory
+		barrier(CLK_LOCAL_MEM_FENCE);
+	}
 
 
 	//we add results from all local groups to the first element of the array
@@ -116,6 +108,7 @@ __kernel void maximum(__global const int* A, __global int* B, __local int* scrat
 	// 4) Return total sum
 	if (!lid) {
 		atomic_add(&B[0],scratch[lid]);
+		//B[get_local_id(0)] = scratch[lid];
 	}
  }
 

@@ -320,7 +320,7 @@ float getStandardDeviation(cl::Context context, cl::CommandQueue queue, cl::Prog
 	//5.3 Copy the result from device to host
 	queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
 
-	return (float)B[0] / 10;
+	return (float)B[0] / 100;
 	//std::cout << "Standard Deviation = " << (float)B[0] / (float)10 << std::endl;
 }
 
@@ -396,13 +396,13 @@ int main(int argc, char **argv) {
 		// Need to: 1) Divide result by original mean, 2) Square Root of the resultant
 		std::cout << "\n*********************" << std::endl;
 		float sdSum = getStandardDeviation(context, queue, program, average);
-		std::cout << "Standard Deviation = " << sqrt((sdSum / average)) << std::endl;
+		std::cout << "Standard Deviation = " << (sqrt(sdSum/airTemp.size())) << std::endl;
 		std::cout << "*********************" << std::endl;
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
 	}
 
-	system("pause");
+	//system("pause");
 	return 0;
 }
