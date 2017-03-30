@@ -38,10 +38,8 @@ void readData() {
 	// Read data in from Text File
 	cout << "Reading..." << endl;
 
-	std::ifstream file("temp_lincolnshire_short.txt");
-	//std::ifstream file("temp_lincolnshire.txt");
-
-	//printf("%.2f", var);
+	//std::ifstream file("temp_lincolnshire_short.txt");
+	std::ifstream file("temp_lincolnshire.txt");
 
 	int counter = 0;
 
@@ -72,7 +70,7 @@ void readData() {
 			counter++;
 			break;
 		case 5:
-			airTemp.push_back(stoi(temp) * 10);
+			airTemp.push_back(stof(temp) * 10);
 			counter = 0;
 			break;
 		}
@@ -391,23 +389,23 @@ int main(int argc, char **argv) {
 
 		std::cout << "\n*********************" << std::endl;
 		float sum = getAverage(context, queue, program);
-		std::cout << "Total Sum = " << sum << std::endl;
-		std::cout << "*********************" << std::endl;
+		printf("Total Sum = %.4f", sum);
+		std::cout << "\n*********************" << std::endl;
 
 		std::cout << "\n*********************" << std::endl;
 		float average = sum / airTemp.size();
-		std::cout << "Mean (Average) = " << average << std::endl;
-		std::cout << "*********************" << std::endl;
+		printf("Mean (average) = %.7f", average);
+		std::cout << "\n*********************" << std::endl;
 		
 		std::cout << "\n*********************" << std::endl;
 		float minmum = getMinimum(context, queue, program);
-		std::cout << "Minimum = " << minmum << std::endl;
-		std::cout << "*********************" << std::endl;
+		printf("Minimum = %.2f", minmum);
+		std::cout << "\n*********************" << std::endl;
 
 		std::cout << "\n*********************" << std::endl;
 		float maximum = getMaximum(context, queue, program);
-		std::cout << "Maximum = " << maximum << std::endl;
-		std::cout << "*********************" << std::endl;
+		printf("Maximum = %.2f", maximum);
+		std::cout << "\n*********************" << std::endl;
 
 		// Function returns partial Sum Squared Difference
 		// Returns sum after initial operations, up to point of items in array whereby they are summed

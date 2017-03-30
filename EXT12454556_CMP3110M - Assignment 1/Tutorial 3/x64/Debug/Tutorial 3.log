@@ -1,4 +1,5 @@
 ﻿  Tutorial 3.cpp
+Tutorial 3.cpp(75): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   Tutorial 3.vcxproj -> C:\Users\Computing\Documents\GitHub\parallel-computing\EXT12454556_CMP3110M - Assignment 1\x64\Debug\Assignment_One.exe
   Tutorial 3.vcxproj -> C:\Users\Computing\Documents\GitHub\parallel-computing\EXT12454556_CMP3110M - Assignment 1\x64\Debug\Assignment_One.pdb (Full PDB)
   my_kernels3.cl
